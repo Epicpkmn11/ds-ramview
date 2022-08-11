@@ -8,8 +8,9 @@
 #include <nds/input.h>
 #include <nds/system.h>
 
-#define SHARED_ADDR ((vu32 *)0x027FFA0C)
-#define KEYS (SHARED_ADDR[5])
+extern vu32* volatile sharedAddr;
+
+#define KEYS (sharedAddr[5])
 
 static void print(int x, int y, const char *str, int palette) {
 	u16 *dst = BG_MAP_RAM_SUB(15) + y * 0x20 + x;
@@ -95,7 +96,7 @@ void ramViewer(void) {
 
 	clearScreen();
 
-	u8 *arm7RamBuffer = ((u8*)SHARED_ADDR) - 0x74C;
+	u8 *arm7RamBuffer = ((u8*)sharedAddr) - 0x74C;
 	bool ramLoaded = false;
 	u8 cursorPosition = 0, mode = 0;
 	while(1) {
@@ -107,10 +108,10 @@ void ramViewer(void) {
 		printHex(0, 0, (u32)address >> 0x10, 2, 3);
 
 		if (arm7Ram && !ramLoaded) {
-			SHARED_ADDR[0] = (vu32)arm7RamBuffer;
-			SHARED_ADDR[1] = (vu32)address;
-			SHARED_ADDR[4] = 0x524D4152; // RAMR
-			while (SHARED_ADDR[4] == 0x524D4152) {
+			sharedAddr[0] = (vu32)arm7RamBuffer;
+			sharedAddr[1] = (vu32)address;
+			sharedAddr[4] = 0x524D4152; // RAMR
+			while (sharedAddr[4] == 0x524D4152) {
 				while (REG_VCOUNT != 191) swiDelay(100);
 				while (REG_VCOUNT == 191) swiDelay(100);
 			}
@@ -218,11 +219,11 @@ void ramViewer(void) {
 				ramPtr[cursorPosition] += 0x10;
 			} else if (KEYS & (KEY_A | KEY_B)) {
 				if(arm7Ram) {
-					SHARED_ADDR[0] = (vu32)arm7RamBuffer;
-					SHARED_ADDR[1] = (vu32)address;
-					SHARED_ADDR[2] = cursorPosition;
-					SHARED_ADDR[4] = 0x574D4152; // RAMW
-					while (SHARED_ADDR[4] == 0x574D4152) {
+					sharedAddr[0] = (vu32)arm7RamBuffer;
+					sharedAddr[1] = (vu32)address;
+					sharedAddr[2] = cursorPosition;
+					sharedAddr[4] = 0x574D4152; // RAMW
+					while (sharedAddr[4] == 0x574D4152) {
 						while (REG_VCOUNT != 191) swiDelay(100);
 						while (REG_VCOUNT == 191) swiDelay(100);
 					}

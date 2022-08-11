@@ -33,8 +33,12 @@
 // #include <dswifi7.h>
 // #include <maxmod7.h>
 
-#define SHARED_ADDR ((vu32 *)0x027FFA0C)
 #define REG_EXTKEYINPUT (*(vuint16*)0x04000136)
+
+#define SHARED_ADDR_DS (0x02FFFA0C)
+#define SHARED_ADDR_DSI (0x0CFFFA0C)
+
+vu32* volatile sharedAddr;
 
 //---------------------------------------------------------------------------------
 void VblankHandler(void) {
@@ -92,33 +96,37 @@ int main() {
 
 	setPowerButtonCB(powerButtonCB);
 
+	if(isDSiMode())
+		sharedAddr = (vu32 *)SHARED_ADDR_DSI;
+	else
+		sharedAddr = (vu32 *)SHARED_ADDR_DS;
+
 	// Keep the ARM7 mostly idle
 	while (!exitflag) {
 		if ( 0 == (REG_KEYINPUT & (KEY_SELECT | KEY_START | KEY_L | KEY_R))) {
 			exitflag = true;
 		}
-		swiWaitForVBlank();
 
 		// Send key states
-		SHARED_ADDR[5] = ~REG_KEYINPUT & 0x3FF;
-		SHARED_ADDR[5] |= ((~REG_EXTKEYINPUT & 0x3) << 10) | ((~REG_EXTKEYINPUT & 0xC0) << 6);
+		sharedAddr[5] = ~REG_KEYINPUT & 0x3FF;
+		sharedAddr[5] |= ((~REG_EXTKEYINPUT & 0x3) << 10) | ((~REG_EXTKEYINPUT & 0xC0) << 6);
 
 		while (REG_VCOUNT != 191) swiDelay(100);
 		while (REG_VCOUNT == 191) swiDelay(100);
 
 		// Check if ARM9 wants us to read/write something
-		switch (SHARED_ADDR[4]) {
+		switch (sharedAddr[4]) {
 			case 0x524D4152: // RAMR
-				tonccpy((u32*)((u32)SHARED_ADDR[0]), (u32*)((u32)SHARED_ADDR[1]), 0xC0);
+				tonccpy((u32*)((u32)sharedAddr[0]), (u32*)((u32)sharedAddr[1]), 0xC0);
 				break;
 			case 0x574D4152: // RAMW
-				tonccpy((u8*)((u32)SHARED_ADDR[1]) + SHARED_ADDR[2], (u8*)((u32)SHARED_ADDR[0]) + SHARED_ADDR[2], 1);
+				tonccpy((u8*)((u32)sharedAddr[1]) + sharedAddr[2], (u8*)((u32)sharedAddr[0]) + sharedAddr[2], 1);
 				break;
 			default:
 				break;
 		}
 
-		SHARED_ADDR[4] = 0x554E454D; // 'MENU'
+		sharedAddr[4] = 0x554E454D; // 'MENU'
 	}
 	return 0;
 }

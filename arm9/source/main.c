@@ -4,6 +4,12 @@
 #include "ascii_bin.h"
 
 #include <nds/arm9/background.h>
+#include <nds/system.h>
+
+#define SHARED_ADDR_DS (0x02FFFA0C)
+#define SHARED_ADDR_DSI (0x0CFFFA0C)
+
+vu32* volatile sharedAddr;
 
 static u16 pal[] = {
 	0xFFFF, // White
@@ -33,6 +39,11 @@ int main(void) {
 	for(int i = 0; i < sizeof(pal) / sizeof(pal[0]); i++) {
 		BG_PALETTE_SUB[i * 0x10 + 1] = pal[i];
 	}
+
+	if(isDSiMode())
+		sharedAddr = (vu32 *)SHARED_ADDR_DSI;
+	else
+		sharedAddr = (vu32 *)SHARED_ADDR_DS;
 
 	ramViewer();
 
