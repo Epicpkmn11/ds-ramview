@@ -140,7 +140,7 @@ void ramViewer(void) {
 			BG_MAP_RAM_SUB(15)[loc] = (BG_MAP_RAM_SUB(15)[loc] & ~(0xF << 12)) | (3 + mode) << 12;
 		}
 
-		waitKeys(KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_Y | KEY_SELECT);
+		waitKeys(KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_Y | KEY_SELECT |KEY_START);
 
 		if(mode == 0) {
 			if(KEYS & KEY_R && KEYS & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT)) {
@@ -172,8 +172,6 @@ void ramViewer(void) {
 					ramLoaded = false;
 				} else if (KEYS & KEY_A) {
 					mode = 1;
-				} else if (KEYS & KEY_B) {
-					return;
 				} else if(KEYS & KEY_Y) {
 					address = jumpToAddress(address);
 					clearScreen();
@@ -181,6 +179,8 @@ void ramViewer(void) {
 				}else if (KEYS & KEY_SELECT) {
 					arm7Ram = !arm7Ram;
 					ramLoaded = false;
+				} else if(KEYS & KEY_START) {
+					return;
 				}
 			}
 		} else if(mode == 1) {
